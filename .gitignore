@@ -27,6 +27,7 @@ proguard/
 
 # Log Files
 *.log
+emulator_screen.png
 
 # Android Studio Navigation editor temp files
 .navigation/

@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OFFLYNE Studio — Offline UPI Prototype & Architecture Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="studio-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div>
+        <h1>OFFLYNE <span>Offline UPI Studio</span></h1>
+        <p class="tagline">Dual-Rail (*99# USSD + UPI 123Pay IVR) Prototype & Architecture Testbed</p>
+      </div>
+    </div>
+    <div class="studio-actions">
+      <span class="badge offline-badge">
+        <span class="pulse-dot"></span> NO INTERNET MODE ACTIVE
+      </span>
+      <button id="btnResetAll" class="btn-secondary" title="Reset all state">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset State
+      </button>
+    </div>
+  </div>
+
+  <main class="studio-body">
+    <!-- LEFT: Interactive Device Preview -->
+    <section class="device-section">
+      <div class="section-title-bar">
+        <h2>Device Prototype (Pixel 7)</h2>
+        <span class="device-sim-status" id="activeSimLabel">Carrier: Jio 4G (123Pay IVR)</span>
+      </div>
+
+      <div class="phone-frame">
+        <div class="phone-notch">
+          <div class="camera-lens"></div>
+          <div class="speaker-grill"></div>
+        </div>
+
+        <div class="phone-screen" id="phoneScreen">
+          <!-- Status Bar -->
+          <div class="status-bar">
+            <span class="time" id="statusTime">12:45</span>
+            <div class="status-icons">
+              <span class="carrier-tag" id="statusCarrier">Jio</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19H19.65l-.62-1.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9zm0 14c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+            </div>
+          </div>
+
+          <!-- Phone App Container -->
+          <div class="app-viewport" id="appViewport">
+            <!-- Screen 1: Setup View -->
+            <div class="view" id="viewSetup">
+              <div class="setup-hero-card">
+                <div class="setup-icon-wrap">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1"/>
+                  </svg>
+                </div>
+                <h3>Setup OFFLYNE</h3>
+                <span class="step-indicator">Step 1 of 2</span>
+                <p>Configure your bank & SIM for offline payments</p>
+              </div>
+
+              <div class="setup-card">
+                <div class="card-header-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 3 2 10h20z"/></svg>
+                  <h4>Bank Selection</h4>
+                </div>
+                <label class="input-label">Choose your primary bank</label>
+                <select id="setupBankSelect" class="form-select">
+                  <option value="State Bank of India">State Bank of India (SBI)</option>
+                  <option value="HDFC Bank">HDFC Bank</option>
+                  <option value="ICICI Bank">ICICI Bank</option>
+                  <option value="Punjab National Bank">Punjab National Bank</option>
+                  <option value="Axis Bank">Axis Bank</option>
+                  <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                </select>
+              </div>
+
+              <div class="setup-card">
+                <div class="card-header-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.342a2 2 0 0 0-.602-1.43l-4.44-4.342A2 2 0 0 0 13.56 2H6a2 2 0 0 0-2 2z"/></svg>
+                  <h4>SIM Card Selection</h4>
+                </div>
+                <label class="input-label">Primary SIM (UPI registered)</label>
+                <select id="setupSimSelect" class="form-select">
+                  <option value="Jio">Jio 4G (UPI 123Pay IVR rail)</option>
+                  <option value="Airtel">Airtel (*99# USSD & 123Pay)</option>
+                  <option value="Vi">Vodafone Idea / Vi (*99# & 123Pay)</option>
+                  <option value="BSNL">BSNL (*99# & 123Pay)</option>
+                </select>
+                <p class="rail-notice" id="simRailNotice">
+                  ℹ️ <strong>Jio Detected:</strong> USSD (*99#) is disabled because Jio is an all-IP VoLTE network. Payments will automatically route through the <strong>UPI 123Pay IVR rail</strong>.
+                </p>
+              </div>
+
+              <div class="setup-card disclaimer-card">
+                <div class="card-header-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  <h4>Disclaimer</h4>
+                </div>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="chkDisclaimer" checked>
+                  <span>OFFLYNE never touches your money or your UPI PIN. It triggers the bank's official rails on your device.</span>
+                </label>
+              </div>
+
+              <button id="btnCompleteSetup" class="btn-primary full-width">
+                Continue to OFFLYNE
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+
+            <!-- Screen 2: Main Home View -->
+            <div class="view hidden" id="viewHome">
+              <!-- Top bar -->
+              <div class="home-topbar">
+                <div class="user-greeting">
+                  <span class="greeting-subtitle">Offline UPI Dashboard</span>
+                  <h2 class="app-title">OFFLYNE</h2>
+                </div>
+                <button class="settings-btn" id="btnOpenSettings" title="App Settings">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+              </div>
+
+              <!-- Bank & SIM Status Banner -->
+              <div class="account-card">
+                <div class="account-pill">
+                  <span class="active-dot"></span>
+                  <span id="homeBankLabel">State Bank of India</span>
+                </div>
+                <div class="rail-indicator" id="homeRailBadge">UPI 123Pay Rail Active</div>
+              </div>
+
+              <!-- Primary Actions Grid -->
+              <div class="action-grid">
+                <!-- Scan QR -->
+                <button class="action-card" id="btnScanQR">
+                  <div class="action-icon-circle accent-blue">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  </div>
+                  <span class="action-title">Scan QR</span>
+                  <span class="action-subtitle" id="qrRailSub">Dials *99*1*3# USSD</span>
+                </button>
+
+                <!-- Pay Contact -->
+                <button class="action-card" id="btnPayContact">
+                  <div class="action-icon-circle accent-emerald">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </div>
+                  <span class="action-title">Pay Contact</span>
+                  <span class="action-subtitle">UPI 123Pay (IVR)</span>
+                </button>
+              </div>
+
+              <!-- Recent Transactions List -->
+              <div class="recent-section">
+                <div class="recent-header">
+                  <div class="recent-title-group">
+                    <h3>Recent Payments</h3>
+                    <span class="bank-sub-tag" id="recentBankFilterTag">State Bank of India</span>
+                  </div>
+                  <div class="recent-controls-group">
+                    <button type="button" class="btn-pill-toggle active" id="btnToggleBankFilter" title="Toggle current bank / all banks">
+                      By Bank
+                    </button>
+                    <span class="txn-count" id="txnCount">0 items</span>
+                  </div>
+                </div>
+                <div class="txn-list" id="homeTxnList">
+                  <!-- Populated by JS with View buttons -->
+                  <div class="empty-txns">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <p>No offline transactions yet</p>
+                    <span>Payments verified via bank SMS will show here</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 3: Pay Contact Modal / View -->
+            <div class="view hidden" id="viewPayContact">
+              <div class="subview-header">
+                <button class="back-btn" id="btnBackFromPayContact">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <h3>Pay Contact via 123Pay</h3>
+              </div>
+
+              <div class="form-container">
+                <div class="form-group">
+                  <div class="label-row-split">
+                    <label class="input-label">Recipient Mobile Number</label>
+                    <button type="button" class="btn-text-action" id="btnOpenContactPicker">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      Directory (20)
+                    </button>
+                  </div>
+                  <div class="input-wrap">
+                    <span class="prefix">+91</span>
+                    <input type="tel" id="payPhoneInput" class="text-input" placeholder="98765 43210" maxlength="10">
+                  </div>
+                  
+                  <!-- Match Status Badges -->
+                  <div id="contactMatchBadge" class="contact-match-badge hidden">
+                    <span class="match-icon">✓</span>
+                    <span class="match-name" id="matchContactName">Priya Patel</span>
+                    <span class="match-tag" id="matchContactTag">Saved Contact</span>
+                  </div>
+                  <div id="contactUnknownBadge" class="contact-unknown-badge hidden">
+                    <span class="unknown-icon">⚠️</span>
+                    <span>Number not identified</span>
+                  </div>
+                </div>
+
+                <!-- Quick Pick Saved Contacts Chips -->
+                <div class="quick-contacts-container">
+                  <span class="quick-contacts-title">Frequent Contacts:</span>
+                  <div class="quick-contacts-row" id="quickContactsTray">
+                    <!-- Populated by JS from top contacts -->
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="input-label">Amount (₹ Whole Rupees)</label>
+                  <div class="input-wrap currency-wrap">
+                    <span class="currency-symbol">₹</span>
+                    <input type="number" id="payAmountInput" class="text-input big-amount" placeholder="0" min="1" max="5000">
+                  </div>
+                  <div class="quick-amounts-row" id="contactQuickAmts">
+                    <button type="button" class="quick-amt-chip" data-amt="50">+₹50</button>
+                    <button type="button" class="quick-amt-chip" data-amt="100">+₹100</button>
+                    <button type="button" class="quick-amt-chip" data-amt="250">+₹250</button>
+                    <button type="button" class="quick-amt-chip" data-amt="500">+₹500</button>
+                    <button type="button" class="quick-amt-chip" data-amt="1000">+₹1,000</button>
+                  </div>
+                  <span class="input-hint">UPI 123Pay cap is ₹5,000 per transaction</span>
+                </div>
+
+                <!-- DTMF Payload Preview Box -->
+                <div class="dtmf-preview-box">
+                  <div class="dtmf-label">
+                    <span>Generated DTMF Dial String</span>
+                    <span class="dtmf-badge">Upi123CallStringBuilder</span>
+                  </div>
+                  <code id="dtmfPreviewCode">tel:08045163666,,1,,,,1</code>
+                  <p class="dtmf-explainer">Each <code>,,</code> represents a 2-second dialer pause waiting for IVR voice prompts before sending automated DTMF digits.</p>
+                </div>
+
+                <button id="btnInitiate123Pay" class="btn-primary full-width call-btn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  Dial UPI 123Pay Transfer
+                </button>
+              </div>
+
+              <!-- Modal: 20 Contacts Directory Picker -->
+              <div id="contactPickerModal" class="contact-modal-overlay hidden">
+                <div class="contact-modal-card">
+                  <div class="contact-modal-header">
+                    <div class="contact-header-title">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      <h4>Saved Contacts Directory (20)</h4>
+                    </div>
+                    <button type="button" class="close-modal-btn" id="btnCloseContactPicker">&times;</button>
+                  </div>
+                  <div class="contact-search-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="contactSearchInput" placeholder="Search by name, city, or number..." autocomplete="off">
+                  </div>
+                  <div class="contact-list-container" id="contactDirectoryList">
+                    <!-- Populated dynamically with all 20 contacts -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Modal: Out of Contacts Safety Warning (NPCI/UPI Security) -->
+              <div id="contactWarningModal" class="contact-warning-overlay hidden">
+                <div class="contact-warning-card">
+                  <div class="warning-icon-circle">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </div>
+                  <h4>Payee Not in Contacts</h4>
+                  <p class="warning-highlight-text">
+                    You are initiating an offline payment of <strong id="warnModalAmount">₹500</strong> to:
+                  </p>
+                  <div class="warn-number-pill" id="warnModalPhone">+91 99999 88888</div>
+                  <div class="warning-advisory-box">
+                    <div class="advisory-row">
+                      <span>⚠️</span>
+                      <p>This number is <strong>not in your 20 saved contacts</strong>. Please verify the digits carefully.</p>
+                    </div>
+                    <div class="advisory-row">
+                      <span>🔒</span>
+                      <p>Offline UPI transfers via 123Pay <strong>cannot be reversed</strong> once authenticated by your bank.</p>
+                    </div>
+                  </div>
+                  <div class="warning-modal-actions">
+                    <button type="button" class="btn-secondary full-width" id="btnCancelWarning">Cancel & Check</button>
+                    <button type="button" class="btn-warning-proceed full-width" id="btnProceedWarning">I Understand, Continue</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 4: QR Scanner Simulator View -->
+            <div class="view hidden" id="viewScanQR">
+              <div class="subview-header">
+                <button class="back-btn" id="btnBackFromScanQR">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <h3>Scan Merchant QR</h3>
+              </div>
+
+              <div class="scanner-viewfinder">
+                <video id="qrCameraFeed" class="camera-feed" autoplay playsinline muted></video>
+                <canvas id="qrScanCanvas" style="display:none;"></canvas>
+                <div class="viewfinder-box" id="viewfinderBox" title="Tap viewfinder to trigger QR scan">
+                  <div class="laser-scanner"></div>
+                  <div class="corner-tl"></div><div class="corner-tr"></div>
+                  <div class="corner-bl"></div><div class="corner-br"></div>
+                  <span class="qr-target-text">Point camera or tap to scan QR</span>
+                </div>
+                <div id="cameraStatusPill" class="camera-status-pill">📷 Opening Device Camera...</div>
+
+                <!-- Invalid QR Error Banner -->
+                <div id="qrErrorModal" class="qr-error-overlay hidden">
+                  <div class="qr-error-card">
+                    <div class="qr-error-icon">⚠️</div>
+                    <h4>Invalid QR Code</h4>
+                    <p id="qrErrorDesc">Unrecognized QR code scanned.</p>
+                    <button id="btnDismissQrError" class="btn-primary full-width">Scan Again</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scanner-controls-bar">
+                <button type="button" class="scanner-bar-btn" id="btnCaptureCurrentFrame" title="Tap to capture in-frame QR or auto-detect">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+                  <span>Capture / Detect QR</span>
+                </button>
+                <label class="scanner-bar-btn" for="qrFileInput" title="Select QR image from device">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <span>Upload QR Image</span>
+                </label>
+                <input type="file" id="qrFileInput" accept="image/*" style="display:none;">
+              </div>
+            </div>
+
+            <!-- Screen 4B: Merchant Payment Sheet (After QR Scan) -->
+            <div class="view hidden" id="viewMerchantPay">
+              <div class="subview-header">
+                <button class="back-btn" id="btnBackFromMerchantPay">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <h3>Pay Merchant</h3>
+              </div>
+
+              <div class="merchant-badge-card">
+                <div class="merchant-avatar" id="merchantAvatarIcon">🛒</div>
+                <div class="merchant-info">
+                  <div class="merchant-title-row">
+                    <h4 id="merchantDisplayName">Sharma General Store</h4>
+                    <span class="verified-pill">✓ Verified Merchant</span>
+                  </div>
+                  <span class="merchant-sub" id="merchantCategoryText">Grocery & Daily Needs</span>
+                  <span class="merchant-vpa" id="merchantVpaText">sharmakirana@sbi</span>
+                </div>
+              </div>
+
+              <div class="form-container">
+                <div class="form-group">
+                  <label class="input-label">Enter Amount to Pay (₹)</label>
+                  <div class="input-wrap currency-wrap">
+                    <span class="currency-symbol">₹</span>
+                    <input type="number" id="merchantAmountInput" class="text-input big-amount" placeholder="0" min="1" max="5000" autofocus>
+                  </div>
+                  <div class="quick-amounts-row" id="merchantQuickAmts">
+                    <button type="button" class="quick-amt-chip" data-amt="50">+₹50</button>
+                    <button type="button" class="quick-amt-chip" data-amt="100">+₹100</button>
+                    <button type="button" class="quick-amt-chip" data-amt="250">+₹250</button>
+                    <button type="button" class="quick-amt-chip" data-amt="500">+₹500</button>
+                    <button type="button" class="quick-amt-chip" data-amt="1000">+₹1,000</button>
+                  </div>
+                  <span class="input-hint">No internet required • Verified via local bank SMS</span>
+                </div>
+
+                <div class="merchant-rail-info">
+                  <span>Routing via:</span>
+                  <strong id="merchantRailLabel">UPI 123Pay (IVR)</strong>
+                </div>
+
+                <button id="btnProceedMerchantPin" class="btn-primary full-width call-btn">
+                  Proceed to Pay
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Screen 4C: NPCI Authentic UPI PIN Authorization Screen -->
+            <div class="view hidden" id="viewUpiPin">
+              <div class="upi-pin-container">
+                <div class="upi-pin-header">
+                  <button class="back-btn pin-back-btn" id="btnBackFromUpiPin" title="Cancel & Return">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                  </button>
+                  <div class="npci-brand-tag">
+                    <span class="npci-pill">NPCI</span>
+                    <span class="upi-secure-badge">🔒 SECURE UPI PIN</span>
+                  </div>
+                  <button class="eye-toggle-btn" id="btnTogglePinVisibility" title="Show or Mask PIN">
+                    <svg id="eyeOpenIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg id="eyeClosedIcon" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </button>
+                </div>
+
+                <!-- Payment Summary in PIN Sheet -->
+                <div class="pin-summary-card">
+                  <div class="pin-payee-row">
+                    <div class="pin-payee-info">
+                      <span class="pin-to-label">Paying To</span>
+                      <strong id="pinPayeeName">Sharma General Store</strong>
+                      <span class="pin-payee-sub" id="pinPayeeSub">sharmakirana@sbi</span>
+                    </div>
+                    <div class="pin-amount-box">
+                      <span class="pin-amt-currency">₹</span>
+                      <span class="pin-amt-value" id="pinAmountDisplay">150</span>
+                    </div>
+                  </div>
+                  <div class="pin-bank-row">
+                    <span class="pin-bank-icon">🏛️</span>
+                    <div class="pin-bank-details">
+                      <span class="pin-bank-name" id="pinBankName">State Bank of India</span>
+                      <span class="pin-acc-mask">Account ending in •••• 4521</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- PIN Prompt & Dots Display -->
+                <div class="pin-prompt-box">
+                  <span class="pin-prompt-title">ENTER 4-DIGIT UPI PIN</span>
+                  <div class="pin-dots-row" id="pinDotsRow">
+                    <div class="pin-dot" id="pinDot0" data-index="0"></div>
+                    <div class="pin-dot" id="pinDot1" data-index="1"></div>
+                    <div class="pin-dot" id="pinDot2" data-index="2"></div>
+                    <div class="pin-dot" id="pinDot3" data-index="3"></div>
+                  </div>
+                  <div class="pin-error-feedback hidden" id="pinErrorFeedback">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span id="pinErrorMsg">Incorrect UPI PIN. Please try again.</span>
+                  </div>
+                </div>
+
+                <!-- Custom Numeric Keypad -->
+                <div class="upi-keypad-grid">
+                  <button type="button" class="keypad-btn" data-key="1">1</button>
+                  <button type="button" class="keypad-btn" data-key="2">2</button>
+                  <button type="button" class="keypad-btn" data-key="3">3</button>
+                  <button type="button" class="keypad-btn" data-key="4">4</button>
+                  <button type="button" class="keypad-btn" data-key="5">5</button>
+                  <button type="button" class="keypad-btn" data-key="6">6</button>
+                  <button type="button" class="keypad-btn" data-key="7">7</button>
+                  <button type="button" class="keypad-btn" data-key="8">8</button>
+                  <button type="button" class="keypad-btn" data-key="9">9</button>
+                  <button type="button" class="keypad-btn keypad-action-btn" id="btnKeypadBackspace" title="Delete">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+                  </button>
+                  <button type="button" class="keypad-btn" data-key="0">0</button>
+                  <button type="button" class="keypad-btn keypad-submit-btn" id="btnKeypadSubmit" title="Authorize Payment">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                </div>
+
+                <div class="pin-security-disclaimer">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>OFFLYNE does not store your PIN. Telephony tones transmitted directly to bank.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 5: Active Call & CallOverlayService Simulator -->
+            <div class="view hidden" id="viewCallActive">
+              <div class="call-screen-backdrop">
+                <div class="calling-pulse"></div>
+                <div class="call-avatar">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <h3 id="callTargetName">NPCI UPI 123Pay</h3>
+                <span class="call-timer" id="callDurationTimer">00:12</span>
+                <span class="call-status-pill" id="callStateLabel">OFFHOOK — Automated DTMF In Progress</span>
+
+                <!-- Floating CallOverlayService Simulation -->
+                <div class="floating-overlay-card">
+                  <div class="overlay-header">
+                    <span class="overlay-badge">OFFLYNE OVERLAY</span>
+                    <span class="audio-muted-badge">🔇 Call Audio Muted</span>
+                  </div>
+                  <div class="overlay-body">
+                    <div class="overlay-row">
+                      <span>Sending to:</span>
+                      <strong id="overlayRecipient">+91 98765 43210</strong>
+                    </div>
+                    <div class="overlay-row">
+                      <span>Amount:</span>
+                      <strong id="overlayAmount">₹500</strong>
+                    </div>
+                    <div class="overlay-progress-bar">
+                      <div class="overlay-fill" id="overlayProgressFill" style="width: 45%;"></div>
+                    </div>
+                    <p class="overlay-guidance" id="overlayStepText">Step: Automated tone sequence transmitting...</p>
+                  </div>
+                </div>
+
+                <div class="call-controls">
+                  <button class="end-call-btn" id="btnEndCall">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91M23 1 1 23"/></svg>
+                    End Call
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 6: Waiting For Verification Screen -->
+            <div class="view hidden" id="viewWaitingVerification">
+              <div class="waiting-card">
+                <div class="spinner-orbit">
+                  <div class="spinner-core"></div>
+                </div>
+                <h3>Awaiting Bank SMS</h3>
+                <p>Call ended. Waiting for your bank's confirmation SMS within the 10-minute operation window.</p>
+                <div class="waiting-meta">
+                  <div><span>Expected Amount:</span> <strong id="waitExpectedAmt">₹500</strong></div>
+                  <div><span>Session ID:</span> <code id="waitSessionId">tx_784920</code></div>
+                  <div><span>Operation Window:</span> <span class="timer-countdown" id="waitWindowTime">09:48</span></div>
+                </div>
+                <div class="hint-box">
+                  💡 <em>Use the SMS Injector panel on the right to simulate incoming bank SMS alerts and watch the state machine verify!</em>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 7: Payment Result Screen (PaymentResultActivity) -->
+            <div class="view hidden" id="viewPaymentResult">
+              <div class="result-card" id="resultCard">
+                <div class="result-icon-circle" id="resultIconCircle">
+                  <svg id="resultSuccessIcon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg id="resultFailIcon" class="hidden" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <h3 id="resultTitle">Payment Successful</h3>
+                <span class="result-amount" id="resultAmountText">₹500.00</span>
+                <span class="result-sub" id="resultBankConfirmedLabel">Confirmed by SBI via SMS</span>
+
+                <div class="result-receipt">
+                  <div class="receipt-row">
+                    <span>Payee / Recipient</span>
+                    <strong id="receiptPayee">+91 98765 43210</strong>
+                  </div>
+                  <div class="receipt-row">
+                    <span>Bank Reference (RRN)</span>
+                    <code id="receiptRrn">UPI/409823901824</code>
+                  </div>
+                  <div class="receipt-row">
+                    <span>Verified Timestamp</span>
+                    <span id="receiptTime">Just now</span>
+                  </div>
+                  <div class="receipt-row">
+                    <span>Rail Used</span>
+                    <span id="receiptRail">UPI 123Pay (IVR)</span>
+                  </div>
+                  <div class="receipt-excerpt">
+                    <span class="excerpt-title">Sanitized Bank SMS Excerpt:</span>
+                    <p id="receiptSmsExcerpt">"A/c XX556 debited by 500.00 on 29-Sep. Ref 409823901824. Balance Rs 4,520."</p>
+                  </div>
+                </div>
+
+                <button class="btn-primary full-width" id="btnAcknowledgeResult">Done & Back to Home</button>
+            </div>
+
+            <!-- Modal: Detailed Transaction Receipt & Audit View (Feature: View Transaction Details) -->
+            <div id="txnDetailsModal" class="txn-modal-overlay hidden">
+              <div class="txn-details-card">
+                <div class="txn-details-header">
+                  <div class="txn-header-brand">
+                    <span class="modal-bank-badge" id="modalBankBadge">State Bank of India</span>
+                    <span class="modal-auth-badge">Stored in DB</span>
+                  </div>
+                  <button type="button" class="modal-close-x" id="btnCloseTxnModal" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+
+                <div class="txn-receipt-hero">
+                  <div class="txn-status-icon-bubble">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div class="txn-hero-amount" id="modalTxnAmount">₹500.00</div>
+                  <span class="txn-hero-status" id="modalTxnStatus">Payment Succeeded</span>
+                  <span class="txn-hero-timestamp" id="modalTxnTime">29 Sep 2026, 09:42 PM</span>
+                </div>
+
+                <div class="txn-receipt-sheet">
+                  <div class="receipt-kv">
+                    <span class="kv-label">Recipient / Payee</span>
+                    <span class="kv-value bold" id="modalTxnPayee">Sharma General Store</span>
+                  </div>
+                  <div class="receipt-kv">
+                    <span class="kv-label">Virtual Address (VPA)</span>
+                    <span class="kv-value font-mono" id="modalTxnVpa">sharmakirana@sbi</span>
+                  </div>
+                  <div class="receipt-kv">
+                    <span class="kv-label">Bank Ledger</span>
+                    <span class="kv-value" id="modalTxnBank">State Bank of India</span>
+                  </div>
+                  <div class="receipt-kv">
+                    <span class="kv-label">Offline Rail</span>
+                    <span class="kv-value highlight" id="modalTxnRail">*99*1*3# USSD (Scan-to-Pay)</span>
+                  </div>
+                  <div class="receipt-kv">
+                    <span class="kv-label">Transaction ID</span>
+                    <div class="kv-value-copy">
+                      <span class="font-mono" id="modalTxnId">txn_k92s8f1</span>
+                      <button type="button" class="btn-copy-id" id="btnCopyTxnId" title="Copy ID">📋</button>
+                    </div>
+                  </div>
+                  <div class="receipt-kv">
+                    <span class="kv-label">UPI Reference No (RRN)</span>
+                    <span class="kv-value font-mono" id="modalTxnRrn">UPI/429810294821</span>
+                  </div>
+                </div>
+
+                <!-- Bank SMS Verification Proof Box -->
+                <div class="txn-audit-box">
+                  <div class="audit-box-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <span>Bank SMS Ingestion Audit Proof</span>
+                  </div>
+                  <p class="audit-sms-quote" id="modalTxnSmsQuote">"Dear SBI User, your A/c ending with 4521 has been debited by Rs 500.00 on 29Sep26 via UPI Ref 429810294821. Avl Bal Rs 12,480.00"</p>
+                </div>
+
+                <div class="txn-modal-actions">
+                  <button type="button" class="btn-primary full-width" id="btnDoneViewTxn">Close Receipt</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Studio Testbed, SMS Injector & Brainstorming Lab -->
+    <section class="studio-sidebar">
+      <!-- Tabs Navigation -->
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="tabSimulator">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Simulation Rack
+        </button>
+        <button class="tab-btn" data-tab="tabDatabase">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Bank Ledgers & DB
+        </button>
+        <button class="tab-btn" id="tabBtnTxnInspector" data-tab="tabTxnInspector">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Txn Details
+        </button>
+        <button class="tab-btn" data-tab="tabArchitecture">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          Architecture & Rails
+        </button>
+      </div>
+
+      <!-- Tab 1: Simulation Rack -->
+      <div class="tab-content active" id="tabSimulator">
+        <!-- Live State Machine Inspector -->
+        <div class="card panel-card">
+          <div class="panel-header">
+            <h3>Payment State Machine (Single Writer)</h3>
+            <span class="status-chip" id="stateMachineBadge">IDLE</span>
+          </div>
+          <div class="state-pipeline">
+            <div class="state-node active" id="nodeIdle">Idle</div>
+            <div class="state-arrow">→</div>
+            <div class="state-node" id="nodeInitiating">Initiating</div>
+            <div class="state-arrow">→</div>
+            <div class="state-node" id="nodeInProgress">InProgress</div>
+            <div class="state-arrow">→</div>
+            <div class="state-node" id="nodeWaiting">Waiting</div>
+            <div class="state-arrow">→</div>
+            <div class="state-node" id="nodeTerminal">Success / Failed</div>
+          </div>
+          <div class="state-debug-log" id="stateDebugLog">
+            <div>[00:00:00] PaymentSessionManager initialized. Room SQLite ready.</div>
+          </div>
+        </div>
+
+        <!-- Bank SMS Injection Console (Mimics DebugSmsInjectionReceiver & SimpleSMSReceiver) -->
+        <div class="card panel-card">
+          <div class="panel-header">
+            <h3>Bank Confirmation SMS Injector</h3>
+            <span class="badge">SmsIngestionPipeline</span>
+          </div>
+          <p class="panel-desc">Test real-world bank confirmations. In offline payments, the bank SMS is the <strong>sole proof of money movement</strong>.</p>
+
+          <div class="template-buttons">
+            <button class="template-btn" id="btnSmsSbiSuccess">
+              <span class="bank-tag sbi">SBI</span>
+              <span class="desc">Exact Debit Match (₹500)</span>
+            </button>
+            <button class="template-btn" id="btnSmsHdfcSuccess">
+              <span class="bank-tag hdfc">HDFC</span>
+              <span class="desc">Exact Debit Match (₹500)</span>
+            </button>
+            <button class="template-btn warning-template" id="btnSmsMismatch">
+              <span class="bank-tag icici">ICICI</span>
+              <span class="desc">Amount Mismatch (₹250 ≠ ₹500)</span>
+            </button>
+            <button class="template-btn error-template" id="btnSmsFailed">
+              <span class="bank-tag axis">AXIS</span>
+              <span class="desc">Transaction Failed (Insufficient Bal)</span>
+            </button>
+            <button class="template-btn info-template" id="btnSmsCredit">
+              <span class="bank-tag pnb">PNB</span>
+              <span class="desc">Incoming Salary Credit (Ignored)</span>
+            </button>
+          </div>
+
+          <div class="custom-sms-box">
+            <div class="custom-row">
+              <input type="text" id="customSmsSender" class="text-input" placeholder="Sender (e.g. VK-SBIINB)" value="VK-SBIINB">
+            </div>
+            <textarea id="customSmsBody" class="textarea-input" rows="3" placeholder="Enter bank SMS text...">Dear SBI User, your A/c ending with 4521 has been debited by Rs 500.00 on 29Sep26 via UPI Ref 429810294821. Avl Bal Rs 12,480.00</textarea>
+            <button id="btnInjectCustomSms" class="btn-primary full-width">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              Inject SMS Broadcast
+            </button>
+          </div>
+        </div>
+
+        <!-- Telephony Simulator Controls -->
+        <div class="card panel-card">
+          <div class="panel-header">
+            <h3>Telephony & Call Simulation</h3>
+            <span class="badge">CallStateCoordinator</span>
+          </div>
+          <div class="telephony-buttons">
+            <button class="btn-secondary" id="btnSimOffhook">Simulate OFFHOOK (Connected)</button>
+            <button class="btn-secondary" id="btnSimCallEnd">Simulate Call End (Normal >5s)</button>
+            <button class="btn-secondary" id="btnSimShortCall">Simulate Call Drop (<5s Abort)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Persistent Bank Database & Ledger Inspector -->
+      <div class="tab-content" id="tabDatabase">
+        <div class="card panel-card">
+          <div class="panel-header">
+            <h3>Bank Transaction Ledgers (Database)</h3>
+            <span class="badge" id="dbStatusBadge">IndexedDB + Partitioned Storage</span>
+          </div>
+          <p class="panel-desc">All offline payments are permanently committed to an on-device database, segregated by <strong>Bank Account</strong>. Each record preserves the cryptographically verified SMS audit log.</p>
+
+          <!-- Bank Ledger Summary Cards Grid -->
+          <div class="bank-ledger-grid" id="bankLedgerCards">
+            <!-- Populated dynamically with bank counts and totals -->
+          </div>
+
+          <!-- Database Filter & Action Bar -->
+          <div class="db-controls-bar">
+            <div class="db-filter-select-wrap">
+              <label for="dbBankFilter">Filter by Bank:</label>
+              <select id="dbBankFilter" class="form-select small-select">
+                <option value="ALL">All Banks (Unified Ledger)</option>
+                <option value="State Bank of India">State Bank of India</option>
+                <option value="HDFC Bank">HDFC Bank</option>
+                <option value="ICICI Bank">ICICI Bank</option>
+                <option value="Punjab National Bank">Punjab National Bank</option>
+                <option value="Axis Bank">Axis Bank</option>
+                <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+              </select>
+            </div>
+            <div class="db-actions-right">
+              <button type="button" class="btn-secondary small-btn" id="btnExportDbJson" title="Export database to JSON format">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export JSON
+              </button>
+              <button type="button" class="btn-text-danger small-btn" id="btnClearDb" title="Reset transaction database">
+                Reset DB
+              </button>
+            </div>
+          </div>
+
+          <!-- Database Records Table (View button removed as requested) -->
+          <div class="contacts-table-wrapper">
+            <table class="contacts-spec-table db-table">
+              <thead>
+                <tr>
+                  <th>Txn ID</th>
+                  <th>Bank Name</th>
+                  <th>Payee / VPA</th>
+                  <th>Amount</th>
+                  <th>Rail</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="dbTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Transaction Details & Verification Inspector (Triggered by Mobile UI "View" button) -->
+      <div class="tab-content" id="tabTxnInspector">
+        <div class="card panel-card inspector-card">
+          <div class="panel-header">
+            <div class="inspector-header-left">
+              <span class="inspector-badge" id="inspStatusBadge">SUCCESS</span>
+              <h3 id="inspTitle">Transaction Details & Audit Proof</h3>
+            </div>
+            <button type="button" class="btn-secondary small-btn" id="btnCloseInspector">
+              ← Back to Simulator
+            </button>
+          </div>
+
+          <!-- Hero Status Banner -->
+          <div class="inspector-hero" id="inspHeroBox">
+            <div class="insp-icon-bubble" id="inspIconBubble">
+              <svg id="inspSuccessSvg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg id="inspFailedSvg" class="hidden" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </div>
+            <div class="insp-hero-amount" id="inspAmount">₹500.00</div>
+            <span class="insp-hero-status-label" id="inspStatusLabel">Payment Completed & Bank Verified</span>
+            <span class="insp-hero-timestamp" id="inspTimestamp">29 Sep 2026, 09:15 PM</span>
+          </div>
+
+          <!-- Detailed Key-Value Grid -->
+          <div class="inspector-grid">
+            <div class="insp-grid-item">
+              <span class="insp-label">Bank Account</span>
+              <span class="insp-value bank-val" id="inspBank">State Bank of India</span>
+            </div>
+            <div class="insp-grid-item">
+              <span class="insp-label">Transaction ID</span>
+              <div class="insp-value-copy">
+                <code id="inspTxnId">txn_sbi_94821</code>
+                <button type="button" class="btn-copy-id" id="btnCopyInspTxnId" title="Copy ID">📋</button>
+              </div>
+            </div>
+            <div class="insp-grid-item">
+              <span class="insp-label">Recipient / Payee</span>
+              <span class="insp-value bold" id="inspPayee">Sharma General Store</span>
+            </div>
+            <div class="insp-grid-item">
+              <span class="insp-label">Virtual Address (VPA)</span>
+              <code id="inspVpa">sharmakirana@sbi</code>
+            </div>
+            <div class="insp-grid-item">
+              <span class="insp-label">Offline Payment Rail</span>
+              <span class="insp-rail-pill" id="inspRail">*99*1*3# USSD (Scan-to-Pay)</span>
+            </div>
+            <div class="insp-grid-item">
+              <span class="insp-label">Bank UPI Ref / RRN</span>
+              <code id="inspRrn">UPI/429810294821</code>
+            </div>
+          </div>
+
+          <!-- Offline Security Audit Proof Box -->
+          <div class="insp-audit-container">
+            <div class="insp-audit-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Cryptographic Bank Verification Audit Log</span>
+            </div>
+            <div class="insp-audit-body" id="inspAuditBody">
+              <p class="insp-sms-quote" id="inspSmsQuote">"Dear SBI User, your A/c ending with 4521 has been debited by Rs 500.00 on 29Sep26 via UPI Ref 429810294821. Avl Bal Rs 12,480.00"</p>
+              <div class="insp-check-list" id="inspCheckList">
+                <div class="insp-check-item pass" id="chkPaiseExact">
+                  <span class="chk-icon">✓</span>
+                  <span id="chkPaiseExactText">Amount Match: Verified exact match against payment session</span>
+                </div>
+                <div class="insp-check-item pass" id="chkDebitKeyword">
+                  <span class="chk-icon">✓</span>
+                  <span id="chkDebitKeywordText">Debit Keyword: Confirmed funds deducted from account</span>
+                </div>
+                <div class="insp-check-item pass" id="chkWindowTime">
+                  <span class="chk-icon">✓</span>
+                  <span id="chkWindowTimeText">Security Window: Ingested within 10-minute validity threshold</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Architecture & Rails Breakdown -->
+      <div class="tab-content" id="tabArchitecture">
+        <div class="card panel-card">
+          <h3>The Offline Payment Rails</h3>
+          <div class="rails-comparison-table">
+            <div class="rail-item">
+              <div class="rail-header">
+                <h4>1. UPI 123Pay IVR Rail</h4>
+                <span class="badge-accent">Universal / All SIMs</span>
+              </div>
+              <p>Uses standard voice call signalling + DTMF (Dual-Tone Multi-Frequency) tones. Supported on <strong>all networks including Jio</strong>.</p>
+              <ul>
+                <li><strong>How OFFLYNE wraps it:</strong> Generates DTMF pause string <code>tel:08045163666,,1,&lt;phone&gt;,,&lt;amt&gt;,,1</code>.</li>
+                <li><strong>Muting:</strong> OFFLYNE silences phone call audio stream so user doesn't hear screeching tones.</li>
+                <li><strong>Supervision:</strong> <code>CallOverlayService</code> provides an Android overlay so the user doesn't feel lost in the dialer.</li>
+              </ul>
+            </div>
+
+            <div class="rail-item">
+              <div class="rail-header">
+                <h4>2. *99# USSD Rail</h4>
+                <span class="badge-warning">GSM Only (No Jio)</span>
+              </div>
+              <p>Uses 2G/3G GSM signalling channel. Fast menu walkthrough for non-Jio telcos (Airtel, Vi, BSNL).</p>
+              <ul>
+                <li><strong>How OFFLYNE wraps it:</strong> Dials <code>*99*1*3#</code> for Scan QR to directly reach the VPA transfer menu.</li>
+                <li><strong>Limitation:</strong> Jio is a pure VoLTE network without 2G GSM fallback, meaning USSD strictly fails on Jio.</li>
+              </ul>
+            </div>
+
+            <div class="rail-item">
+              <div class="rail-header">
+                <h4>3. The Cardinal Verification Invariant</h4>
+                <span class="badge-success">Guaranteed Zero False-Positives</span>
+              </div>
+              <div class="callout-box">
+                "A payment is only ever promoted to SUCCESS by an incoming bank SMS parsed locally on-device. If no SMS arrives before the 10-minute deadline, the pending attempt is deleted and never reported as success."
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="jsqr.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
